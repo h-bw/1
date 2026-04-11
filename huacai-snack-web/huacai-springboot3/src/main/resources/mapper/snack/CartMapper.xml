@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huacai.snack.mapper.CartMapper">
+
+    <resultMap type="Cart" id="CartResult">
+        <result property="cartId"    column="cart_id"    />
+        <result property="productId"    column="product_id"    />
+        <result property="quantity"    column="quantity"    />
+        <result property="userId"    column="user_id"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="name"    column="name"    />
+        <result property="description"    column="description"    />
+        <result property="price"    column="price"    />
+        <result property="image"    column="image"    />
+        <result property="userName"    column="user_name"    />
+    </resultMap>
+
+    <sql id="selectCartVo">
+        select cart_id, product_id, quantity, user_id, create_time from cart
+    </sql>
+
+    <select id="selectCartList" parameterType="Cart" resultMap="CartResult">
+        select c.cart_id, c.product_id, c.quantity, c.user_id, c.create_time,
+               p.name, p.description, p.price, p.image, u.user_name
+        from cart c
+        left join product p on c.product_id = p.product_id
+        left join sys_user u on c.user_id = u.user_id
+        <where>
+            <if test="productId != null  and productId != ''">
+                and c.product_id like concat('%', #{productId}, '%')
+            </if>
+            <if test="userId != null "> and c.user_id = #{userId}</if>
+            <if test="name != null  and name != ''">
+                and p.name like concat('%', #{name}, '%')
+            </if>
+            <if test="userName != null  and userName != ''">
+                and u.user_name like concat('%', #{userName}, '%')
+            </if>
+        </where>
+        order by c.create_time desc
+    </select>
+
+    <select id="selectCartByCartId" parameterType="String" resultMap="CartResult">
+        <include refid="selectCartVo"/>
+        where cart_id = #{cartId}
+    </select>
+
+    <!--根据商品ID和用户ID查询购物车中是否有该商品-->
+    <select id="selectIsExistByProductIdAndUserId" resultType="java.lang.Boolean">
+        select count(cart_id)
+        from cart
+        where product_id = #{productId} and user_id = #{userId}
+    </select>
+
+    <!--根据商品ID和用户ID查询购物信息-->
+    <select id="selectCartByProductIdAndUserId" resultMap="CartResult">
+        select cart_id, quantity
+        from cart
+        where product_id = #{productId} and user_id = #{userId}
+    </select>
+
+    <insert id="insertCart" parameterType="Cart">
+        insert into cart
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="cartId != null">cart_id,</if>
+            <if test="productId != null and productId != ''">product_id,</if>
+            <if test="quantity != null">quantity,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="cartId != null">#{cartId},</if>
+            <if test="productId != null and productId != ''">#{productId},</if>
+            <if test="quantity != null">#{quantity},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateCart" parameterType="Cart">
+        update cart
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="productId != null and productId != ''">product_id = #{productId},</if>
+            <if test="quantity != null">quantity = #{quantity},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where cart_id = #{cartId}
+    </update>
+
+    <delete id="deleteCartByCartId" parameterType="String">
+        delete from cart where cart_id = #{cartId}
+    </delete>
+
+    <delete id="deleteCartByCartIds" parameterType="String">
+        delete from cart where cart_id in
+        <foreach item="cartId" collection="array" open="(" separator="," close=")">
+            #{cartId}
+        </foreach>
+    </delete>
+</mapper>

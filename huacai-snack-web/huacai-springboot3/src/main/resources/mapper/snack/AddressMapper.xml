@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huacai.snack.mapper.AddressMapper">
+
+    <resultMap type="Address" id="AddressResult">
+        <result property="addressId"    column="address_id"    />
+        <result property="name"    column="name"    />
+        <result property="phone"    column="phone"    />
+        <result property="detail"    column="detail"    />
+        <result property="isDefault"    column="is_default"    />
+        <result property="userId"    column="user_id"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="userName"    column="user_name"    />
+    </resultMap>
+
+    <sql id="selectAddressVo">
+        select address_id, name, phone, detail, is_default, user_id, create_time from address
+    </sql>
+
+    <select id="selectAddressList" parameterType="Address" resultMap="AddressResult">
+        select a.address_id, a.name, a.phone, a.detail, a.is_default, a.user_id, a.create_time,
+               u.user_name
+        from address a
+        left join sys_user u on a.user_id = u.user_id
+        <where>
+            <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
+            <if test="isDefault != null "> and a.is_default = #{isDefault}</if>
+            <if test="userId != null "> and a.user_id = #{userId}</if>
+            <if test="userName != null  and userName != ''">
+                and u.user_name like concat('%', #{userName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="selectAddressByAddressId" parameterType="String" resultMap="AddressResult">
+        <include refid="selectAddressVo"/>
+        where address_id = #{addressId}
+    </select>
+
+    <!--查询个人此前是否有默认收货地址-->
+    <select id="selectIsDefaultByUserId" resultType="java.lang.Boolean">
+        select count(address_id)
+        from address
+        where user_id = #{userId} and is_default = true
+    </select>
+
+    <!--根据用户ID查询此前的默认地址ID-->
+    <select id="selectOldDefaultAddressIdByUserId" resultType="java.lang.String">
+        select address_id
+        from address
+        where user_id = #{userId} and is_default = true
+    </select>
+
+    <insert id="insertAddress" parameterType="Address">
+        insert into address
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="addressId != null">address_id,</if>
+            <if test="name != null and name != ''">name,</if>
+            <if test="phone != null and phone != ''">phone,</if>
+            <if test="detail != null and detail != ''">detail,</if>
+            <if test="isDefault != null">is_default,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="addressId != null">#{addressId},</if>
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="phone != null and phone != ''">#{phone},</if>
+            <if test="detail != null and detail != ''">#{detail},</if>
+            <if test="isDefault != null">#{isDefault},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateAddress" parameterType="Address">
+        update address
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="phone != null and phone != ''">phone = #{phone},</if>
+            <if test="detail != null and detail != ''">detail = #{detail},</if>
+            <if test="isDefault != null">is_default = #{isDefault},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where address_id = #{addressId}
+    </update>
+
+    <delete id="deleteAddressByAddressId" parameterType="String">
+        delete from address where address_id = #{addressId}
+    </delete>
+
+    <delete id="deleteAddressByAddressIds" parameterType="String">
+        delete from address where address_id in
+        <foreach item="addressId" collection="array" open="(" separator="," close=")">
+            #{addressId}
+        </foreach>
+    </delete>
+</mapper>

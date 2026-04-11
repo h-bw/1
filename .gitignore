@@ -1,0 +1,15 @@
+# 依赖与构建产物（避免将 node_modules 等推上 GitHub）
+**/node_modules/
+**/target/
+**/unpackage/
+**/.vite/
+**/dist/
+
+# IDE / 编辑器
+.idea/
+**/.vscode/
+**/.hbuilderx/
+
+*.log
+.DS_Store
+Thumbs.db
