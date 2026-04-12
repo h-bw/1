@@ -170,7 +170,7 @@ huacai-snack-web/huacai-springboot3/
 
 1. 准备 MySQL 数据库
 2. 导入项目 SQL
-3. 修改 `application.yml` 中的数据库连接信息
+3. 修改 `application.yml` 和 `application-druid.yml` 中的数据库连接信息
 4. 启动 `huacai-springboot3`
 
 ### 第二步：启动管理后台
@@ -194,6 +194,48 @@ npm run dev
 ```
 
 用户端一般需要通过 HBuilderX 或 UniApp 对应方式运行到浏览器、模拟器或小程序环境中。
+
+### 6.1 数据库初始化
+
+项目自带初始化 SQL：
+
+- `huacai-snack-web/huacai-springboot3/sql/huacai-snack.sql`
+
+推荐初始化步骤：
+
+1. 在 MySQL 中新建数据库，例如：`huacai_snack`
+2. 执行 `huacai-snack.sql`
+3. 打开后端配置文件，确认数据库地址、用户名、密码
+4. 启动后端后检查表是否已正确读取
+
+后端配置文件位置：
+
+- `huacai-snack-web/huacai-springboot3/src/main/resources/application.yml`
+- `huacai-snack-web/huacai-springboot3/src/main/resources/application-druid.yml`
+
+如果接手后端时出现启动失败，优先检查：
+
+- MySQL 服务是否启动
+- 数据库名是否正确
+- 用户名密码是否正确
+- JDBC 连接地址是否正确
+- SQL 是否已完整导入
+
+### 6.2 启动顺序建议
+
+为了减少联调问题，建议按下面顺序启动：
+
+1. 先启动 MySQL
+2. 再启动后端 `huacai-springboot3`
+3. 然后启动后台管理端 `huacai-admin-vue3`
+4. 最后启动用户端 `huacai-snack-app`
+
+启动后可按下面顺序检查：
+
+1. 后端是否正常监听 `8080`
+2. 后台是否能打开 `http://localhost:90`
+3. 后台接口是否能通过 `/dev-api` 正常访问后端
+4. 用户端接口地址是否仍指向 `http://localhost:8080`
 
 ## 7. 数据库与业务对象
 
@@ -255,3 +297,46 @@ npm run dev
 - 运行前需要优先确认数据库、上传目录和接口地址
 - 如果用于论文或展示，建议重点关注商品、购物车、订单和后台管理四条主线
 
+## 12. 常见问题
+
+### 1. 后端能启动，但前端请求失败
+
+优先检查：
+
+- 后端是否启动在 `8080`
+- 后台代理是否仍为 `/dev-api -> http://localhost:8080`
+- 用户端 `config.js` 中的 `baseUrl` 是否正确
+- 是否存在跨域或代理未生效问题
+
+### 2. 后台页面可以打开，但列表没有数据
+
+优先检查：
+
+- 数据库是否已导入初始化 SQL
+- 接口是否返回成功
+- 后端数据库连接是否正确
+- 当前表中是否已有初始数据
+
+### 3. 用户端能进首页，但商品、订单为空
+
+通常排查：
+
+- `product`、`category`、`banner` 表中是否有数据
+- 用户是否已登录
+- 订单、购物车接口是否正常返回
+
+### 4. 图片上传或显示异常
+
+优先检查：
+
+- 后端上传目录配置
+- 图片访问路径是否正确
+- 本地文件目录是否存在读写权限
+
+### 5. 推荐功能没有结果
+
+这是正常现象之一。当前推荐模块是基础实现：
+
+- 没有历史订单时，通常返回热门商品
+- 数据量太少时，推荐结果会比较简单
+- 如果商品和订单数据为空，推荐结果也会为空
