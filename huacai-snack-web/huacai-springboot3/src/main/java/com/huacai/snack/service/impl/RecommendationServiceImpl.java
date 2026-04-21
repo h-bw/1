@@ -9,8 +9,18 @@ import com.huacai.snack.service.IRecommendationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -18,6 +28,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class RecommendationServiceImpl implements IRecommendationService {
+
     @Autowired
     private OrderMapper orderMapper;
 
@@ -25,258 +36,245 @@ public class RecommendationServiceImpl implements IRecommendationService {
     private ProductMapper productMapper;
 
     /**
-     * 获取推荐商品列表
-     *
-     * @param userId 当前用户ID
-     * @param limit  返回的商品数量限制
-     * @return 推荐商品列表
+     * 获取推荐商品列表。
+     * <p>
+     * 实现方式：基于用户购买历史构建用户-商品交互矩阵，使用余弦相似度计算用户相似度，
+     * 再对相似用户购买过而当前用户未购买的商品进行加权求和排序。
+     * 如果当前用户没有历史订单或候选结果不足，则回退到热门商品推荐。
      */
     @Override
     public List<Product> getAdvancedRecommendationsForUser(Long userId, int limit) {
-        //1.获取目标用户的历史订单数据
-        List<Order> targetUserOrders = orderMapper.selectOrderList(new Order() {{
-            setUserId(userId);
-        }});
+        if (userId == null || limit <= 0) {
+            return Collections.emptyList();
+        }
 
-        //如果用户没有订单记录, 则返回热门商品
-        if (targetUserOrders == null || targetUserOrders.isEmpty()) {
+        List<Order> allOrders = safeOrderList(orderMapper.selectOrderList(new Order()));
+        Map<Long, Map<String, Double>> userItemMatrix = buildUserItemMatrix(allOrders);
+        Map<String, Double> targetInteractions = userItemMatrix.getOrDefault(userId, Collections.emptyMap());
+        if (targetInteractions.isEmpty()) {
             return getPopularProducts(limit);
         }
 
-        //2. 获取所有用户订单数据
-        List<Order> allOrders = orderMapper.selectOrderList(new Order());
-
-        //3. 找到相似用户
-        Set<Long> similarUsers = findSimilarUsers(userId, targetUserOrders, allOrders);
-
-        //4.获取相似用户喜欢的商品
-        List<Product> SimilarUserProducts = getProductsFromSimilarUsers(similarUsers, targetUserOrders, allOrders);
-
-        //5.结合原有推荐算法生成综合推荐
-        List<Product> baseRecommendations = getRecommendationsForUser(userId, limit);
-
-        //6.合并并且去重推荐结果
-        Set<String> productIds = new HashSet<>();
-        List<Product> finalRecommendations = new ArrayList<>();
-
-        //先添加相似用户喜欢的商品
-        for (Product product : SimilarUserProducts) {
-            if (finalRecommendations.size() >= limit) break;
-            if (!productIds.contains(product.getProductId())) {
-                finalRecommendations.add(product);
-                productIds.add(product.getProductId());
-            }
+        List<Product> allProducts = safeProductList(productMapper.selectProductList(new Product()));
+        if (allProducts.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        //再补充基础推荐算法的结果
-        for (Product product : baseRecommendations) {
-            if (finalRecommendations.size() >= limit) break;
-            if (!productIds.contains(product.getProductId())) {
-                finalRecommendations.add(product);
-                productIds.add(product.getProductId());
-            }
+        Map<String, Product> productByName = allProducts.stream()
+                .filter(product -> hasText(product.getName()))
+                .collect(Collectors.toMap(
+                        Product::getName,
+                        product -> product,
+                        (existing, ignored) -> existing,
+                        LinkedHashMap::new
+                ));
+
+        Set<String> purchasedProducts = new HashSet<>(targetInteractions.keySet());
+        Map<Long, Double> userSimilarities = calculateUserSimilarities(userId, targetInteractions, userItemMatrix);
+        Map<String, Double> collaborativeScores = scoreCandidateProducts(userSimilarities, userItemMatrix, purchasedProducts);
+
+        List<Product> recommendations = collaborativeScores.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed()
+                        .thenComparing(Map.Entry::getKey))
+                .map(entry -> productByName.get(entry.getKey()))
+                .filter(Objects::nonNull)
+                .limit(limit)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        if (recommendations.size() >= limit) {
+            return recommendations;
         }
 
-        return finalRecommendations;
+        return supplementWithPopularProducts(recommendations, allProducts, allOrders, purchasedProducts, limit);
     }
 
     /**
-     * 获取热门商品列表
+     * 获取热门商品列表。
      */
     public List<Product> getPopularProducts(int limit) {
-        //获取所有商品
-        List<Product> allProducts = productMapper.selectProductList(new Product());
+        if (limit <= 0) {
+            return Collections.emptyList();
+        }
 
-        //统计商品出现次数
-        HashMap<String, Integer> productCountMap = new HashMap<>();
+        List<Order> allOrders = safeOrderList(orderMapper.selectOrderList(new Order()));
+        List<Product> allProducts = safeProductList(productMapper.selectProductList(new Product()));
+        return rankProductsByPopularity(allProducts, allOrders, Collections.emptySet(), Collections.emptySet(), limit);
+    }
 
-        //获取所有订单用于计算热度
-        List<Order> allOrders = orderMapper.selectOrderList(new Order());
+    private Map<Long, Map<String, Double>> buildUserItemMatrix(List<Order> orders) {
+        Map<Long, Map<String, Double>> userItemMatrix = new HashMap<>();
+        for (Order order : orders) {
+            if (order == null || order.getUserId() == null) {
+                continue;
+            }
 
-        //统计每个商品被购买的次数
-        for (Order order : allOrders) {
-            List<OrderProducts> orderProductsList = order.getOrderProductsList();
-            if (orderProductsList != null) {
-                for (OrderProducts op : orderProductsList) {
-                    productCountMap.put(op.getName(), productCountMap.getOrDefault(op.getName(), 0) + 1);
+            Map<String, Double> itemPreferences = userItemMatrix.computeIfAbsent(order.getUserId(), key -> new HashMap<>());
+            for (OrderProducts orderProduct : safeOrderProducts(order.getOrderProductsList())) {
+                if (!hasText(orderProduct.getName())) {
+                    continue;
                 }
+
+                double preference = extractPreference(orderProduct);
+                itemPreferences.merge(orderProduct.getName(), preference, Double::sum);
+            }
+        }
+        return userItemMatrix;
+    }
+
+    private Map<Long, Double> calculateUserSimilarities(Long userId,
+                                                        Map<String, Double> targetInteractions,
+                                                        Map<Long, Map<String, Double>> userItemMatrix) {
+        Map<Long, Double> userSimilarities = new HashMap<>();
+        for (Map.Entry<Long, Map<String, Double>> entry : userItemMatrix.entrySet()) {
+            Long otherUserId = entry.getKey();
+            if (userId.equals(otherUserId)) {
+                continue;
+            }
+
+            double similarity = cosineSimilarity(targetInteractions, entry.getValue());
+            if (similarity > 0D) {
+                userSimilarities.put(otherUserId, similarity);
+            }
+        }
+        return userSimilarities;
+    }
+
+    private Map<String, Double> scoreCandidateProducts(Map<Long, Double> userSimilarities,
+                                                       Map<Long, Map<String, Double>> userItemMatrix,
+                                                       Set<String> purchasedProducts) {
+        Map<String, Double> collaborativeScores = new HashMap<>();
+
+        for (Map.Entry<Long, Double> similarityEntry : userSimilarities.entrySet()) {
+            Double similarity = similarityEntry.getValue();
+            Map<String, Double> otherUserInteractions = userItemMatrix.getOrDefault(similarityEntry.getKey(), Collections.emptyMap());
+
+            for (Map.Entry<String, Double> itemEntry : otherUserInteractions.entrySet()) {
+                String productName = itemEntry.getKey();
+                if (purchasedProducts.contains(productName)) {
+                    continue;
+                }
+
+                collaborativeScores.merge(productName, similarity * itemEntry.getValue(), Double::sum);
             }
         }
 
-        //根据热度排序返回
+        return collaborativeScores;
+    }
+
+    private double cosineSimilarity(Map<String, Double> left, Map<String, Double> right) {
+        if (left.isEmpty() || right.isEmpty()) {
+            return 0D;
+        }
+
+        Map<String, Double> smaller = left.size() <= right.size() ? left : right;
+        Map<String, Double> larger = smaller == left ? right : left;
+
+        double dotProduct = 0D;
+        for (Map.Entry<String, Double> entry : smaller.entrySet()) {
+            Double otherValue = larger.get(entry.getKey());
+            if (otherValue != null) {
+                dotProduct += entry.getValue() * otherValue;
+            }
+        }
+
+        if (dotProduct == 0D) {
+            return 0D;
+        }
+
+        double leftNorm = vectorNorm(left.values());
+        double rightNorm = vectorNorm(right.values());
+        if (leftNorm == 0D || rightNorm == 0D) {
+            return 0D;
+        }
+        return dotProduct / (leftNorm * rightNorm);
+    }
+
+    private double vectorNorm(Collection<Double> values) {
+        double squareSum = 0D;
+        for (Double value : values) {
+            if (value != null) {
+                squareSum += value * value;
+            }
+        }
+        return Math.sqrt(squareSum);
+    }
+
+    private List<Product> supplementWithPopularProducts(List<Product> collaborativeResults,
+                                                        List<Product> allProducts,
+                                                        List<Order> allOrders,
+                                                        Set<String> purchasedProducts,
+                                                        int limit) {
+        LinkedHashSet<String> existingNames = collaborativeResults.stream()
+                .map(Product::getName)
+                .filter(this::hasText)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        List<Product> supplemented = new ArrayList<>(collaborativeResults);
+        List<Product> popularProducts = rankProductsByPopularity(allProducts, allOrders, purchasedProducts, existingNames, limit);
+        for (Product product : popularProducts) {
+            if (supplemented.size() >= limit) {
+                break;
+            }
+            supplemented.add(product);
+        }
+        return supplemented;
+    }
+
+    private List<Product> rankProductsByPopularity(List<Product> allProducts,
+                                                   List<Order> allOrders,
+                                                   Set<String> excludedProducts,
+                                                   Set<String> existingProducts,
+                                                   int limit) {
+        Map<String, Integer> popularity = buildProductPopularity(allOrders);
+        Comparator<Product> comparator = Comparator
+                .comparingInt((Product product) -> popularity.getOrDefault(product.getName(), 0))
+                .reversed()
+                .thenComparing(Product::getName, Comparator.nullsLast(String::compareTo));
+
         return allProducts.stream()
-                .sorted((p1, p2) -> {
-                    Integer count1 = productCountMap.getOrDefault(p1.getName(), 0);
-                    Integer count2 = productCountMap.getOrDefault(p2.getName(), 0);
-                    return Integer.compare(count2, count1); //降序排列
-                })
+                .filter(product -> hasText(product.getName()))
+                .filter(product -> !excludedProducts.contains(product.getName()))
+                .filter(product -> !existingProducts.contains(product.getName()))
+                .sorted(comparator)
                 .limit(limit)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 查找相似用户
-     */
-    private Set<Long> findSimilarUsers(Long userId, List<Order> targetUserOrders, List<Order> allOrders) {
-        Set<Long> similarUsers = new HashSet<>();
-
-        //获取目标用户购买的所有商品名称
-        Set<String> targetUserProducts = targetUserOrders.stream()
-                .flatMap(order -> order.getOrderProductsList().stream())
-                .map(OrderProducts::getName)
-                .collect(Collectors.toSet());
-
-        // 遍历所有订单，查找购买了相同商品的其他用户
-        for (Order order : allOrders) {
-            // 跳过目标用户自己的订单
-            if (order.getUserId() != null && order.getUserId().equals(userId)) {
-                continue;
-            }
-
-            // 检查该订单是否包含目标用户购买过的商品
-            List<OrderProducts> orderProductsList = order.getOrderProductsList();
-            if (orderProductsList != null) {
-                for (OrderProducts op : orderProductsList) {
-                    if (targetUserProducts.contains(op.getName())) {
-                        similarUsers.add(order.getUserId());
-                        break; // 找到一个共同商品就足够了
-                    }
+    private Map<String, Integer> buildProductPopularity(List<Order> orders) {
+        Map<String, Integer> popularity = new HashMap<>();
+        for (Order order : orders) {
+            for (OrderProducts orderProduct : safeOrderProducts(order.getOrderProductsList())) {
+                if (!hasText(orderProduct.getName())) {
+                    continue;
                 }
+
+                int weight = (int) Math.max(1L, orderProduct.getQuantity() == null ? 1L : orderProduct.getQuantity());
+                popularity.merge(orderProduct.getName(), weight, Integer::sum);
             }
         }
-        return similarUsers;
+        return popularity;
     }
 
-    /**
-     * 获取相似用户喜欢的商品列表
-     */
-    private List<Product> getProductsFromSimilarUsers(Set<Long> similarUsers, List<Order> targetUserOrders, List<Order> allOrders) {
-        //获取目标用户已经购买的商品
-        Set<String> targetUserProducts = targetUserOrders.stream()
-                .flatMap(order -> order.getOrderProductsList().stream())
-                .map(OrderProducts::getName)
-                .collect(Collectors.toSet());
-
-        //统计相似用户购买的商品次数
-        HashMap<String, Integer> similarUserProductCount = new HashMap<>();
-        for (Order order : allOrders) {
-            if (order.getUserId() != null && similarUsers.contains(order.getUserId())) {
-                List<OrderProducts> orderProductsList = order.getOrderProductsList();
-                if (orderProductsList != null) {
-                    for (OrderProducts op : orderProductsList) {
-                        //只统计目标用户未购买的商品
-                        if (!targetUserProducts.contains(op.getName())) {
-                            similarUserProductCount.put(op.getName(), similarUserProductCount.getOrDefault(op.getName(), 0) + 1);
-                        }
-                    }
-                }
-            }
+    private double extractPreference(OrderProducts orderProduct) {
+        if (orderProduct.getQuantity() == null || orderProduct.getQuantity() <= 0) {
+            return 1D;
         }
-
-        //获取所有商品
-        List<Product> allProducts = productMapper.selectProductList(new Product());
-
-        //根据统计次数排序并且返回
-        return allProducts.stream()
-                .filter(product -> similarUserProductCount.containsKey(product.getName()))
-                .sorted((p1, p2) -> {
-                    Integer count1 = similarUserProductCount.getOrDefault(p1.getName(), 0);
-                    Integer count2 = similarUserProductCount.getOrDefault(p2.getName(), 0);
-                    return Integer.compare(count2, count1); //降序排列
-                })
-                .collect(Collectors.toList());
+        return orderProduct.getQuantity();
     }
 
-    /**
-     * 根据用户ID获取推荐商品列表
-     */
-    private List<Product> getRecommendationsForUser(Long userId, int limit) {
-        //1.获取目标用户的历史订单数据
-        List<Order> targetUserOrders = orderMapper.selectOrderList(new Order() {{
-            setUserId(userId);
-        }});
-
-        //如果用户没有订单记录, 则返回热门商品
-        if (targetUserOrders == null || targetUserOrders.isEmpty()) {
-            return getPopularProducts(limit);
-        }
-
-        //2.构建用户画像, 统计用户购买过的商品分类偏好
-        Map<String, Integer> categoryPreference = buildUserCategoryPreference(targetUserOrders);
-
-        //3.获取所有商品
-        List<Product> allProducts = productMapper.selectProductList(new Product());
-
-        //4.计算每个商品的推荐分数
-        Map<Product, Double> productScores = calculateProductScores(allProducts, categoryPreference, targetUserOrders);
-
-        //5.根据分数拍需要并且返回前N个商品
-        return productScores.entrySet().stream()
-                .sorted(Map.Entry.<Product, Double>comparingByValue().reversed())
-                .limit(limit)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+    private List<Order> safeOrderList(List<Order> orders) {
+        return orders == null ? Collections.emptyList() : orders;
     }
 
-    /**
-     * 构建用户画像
-     */
-    private Map<String, Integer> buildUserCategoryPreference(List<Order> userOrders) {
-        HashMap<String, Integer> categoryPreference = new HashMap<>();
-
-        //遍历用户所有订单, 统计个分类商品的购买次数
-        for (Order order : userOrders) {
-            List<OrderProducts> orderProductsList = order.getOrderProductsList();
-            if (orderProductsList != null) {
-                for (OrderProducts op : orderProductsList) {
-                    //使用商品名称作为标识
-                    categoryPreference.put(op.getName(), categoryPreference.getOrDefault(op.getName(), 0) + 1);
-                }
-            }
-        }
-        return categoryPreference;
+    private List<Product> safeProductList(List<Product> products) {
+        return products == null ? Collections.emptyList() : products;
     }
 
-    /**
-     * 计算商品推荐分类
-     */
-    private Map<Product, Double> calculateProductScores(List<Product> products, Map<String, Integer> categoryPreference, List<Order> userOrders) {
-        HashMap<Product, Double> scores = new HashMap<>();
-
-        //获取用户已经购买的商品名称列表, 避免重复推荐
-        Set<String> purchasedProducts = userOrders.stream()
-                .flatMap(order -> order.getOrderProductsList().stream())
-                .map(OrderProducts::getName)
-                .collect(Collectors.toSet());
-
-        for (Product product : products) {
-            //避免推荐用户已经购买过的商品
-            if (purchasedProducts.contains(product.getName())) {
-                continue;
-            }
-
-            double score = 0.0;
-
-            //1.基于分类偏好的分数(主要因素)
-            Integer preferenceCount = categoryPreference.getOrDefault(product.getName(), 0);
-            score += preferenceCount * 10; //偏好权重
-
-            //2.基于价格的分数(价格适中更受欢迎)
-            if (product.getPrice() != null) {
-                //假设最受欢迎的价格区间是10-50元
-                BigDecimal price = product.getPrice();
-                if (price.compareTo(BigDecimal.valueOf(10)) >= 0 && price.compareTo(BigDecimal.valueOf(50)) <= 0) {
-                    score += 5; //价格在合理区间加分
-                }
-            }
-
-            //3.随机因子
-            score += Math.random() * 3;
-
-            scores.put(product, score);
-        }
-        return scores;
+    private List<OrderProducts> safeOrderProducts(List<OrderProducts> orderProducts) {
+        return orderProducts == null ? Collections.emptyList() : orderProducts;
     }
 
-
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
 }
