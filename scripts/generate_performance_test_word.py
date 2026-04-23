@@ -89,8 +89,32 @@ def load_rows():
     return rows
 
 
+def find_endpoint_rows(data, endpoint_name: str):
+    return data.get(endpoint_name, [])
+
+
+def endpoint_summary(rows):
+    if not rows:
+        return None
+    return {
+        "min_avg": min(item["avg_ms"] for item in rows),
+        "max_avg": max(item["avg_ms"] for item in rows),
+        "min_p95": min(item["p95_ms"] for item in rows),
+        "max_p95": max(item["p95_ms"] for item in rows),
+        "max_error_rate": max(item["error_rate"] for item in rows),
+    }
+
+
 def main():
+    data = json.loads(JSON_PATH.read_text(encoding="utf-8"))
     rows = load_rows()
+    product_rows = find_endpoint_rows(data, "商品查询接口")
+    order_rows = find_endpoint_rows(data, "订单提交接口")
+    recommendation_rows = find_endpoint_rows(data, "推荐接口")
+
+    product_summary = endpoint_summary(product_rows)
+    order_summary = endpoint_summary(order_rows)
+    recommendation_summary = endpoint_summary(recommendation_rows)
 
     doc = Document()
     section = doc.sections[0]
@@ -142,15 +166,40 @@ def main():
 
     add_text_paragraph(
         doc,
-        "如表4-x所示，在并发用户数分别为10、30和50的条件下，商品查询接口平均响应时间由25.29 ms上升至67.64 ms，95%响应时间由34.59 ms上升至110.43 ms，错误率始终为0，说明该接口在当前测试规模下具有较好的稳定性。推荐接口平均响应时间由68.06 ms上升至245.74 ms，95%响应时间由84.83 ms上升至326.68 ms，错误率同样保持为0，表明推荐模块在中低并发条件下能够稳定返回结果，但随着并发增加，推荐计算的耗时呈现较为明显的增长趋势。",
+        (
+            "如表4-x所示，在并发用户数分别为10、30和50的条件下，"
+            f"商品查询接口平均响应时间由{product_summary['min_avg']:.2f} ms上升至{product_summary['max_avg']:.2f} ms，"
+            f"95%响应时间由{product_summary['min_p95']:.2f} ms上升至{product_summary['max_p95']:.2f} ms，"
+            f"错误率最高为{product_summary['max_error_rate'] * 100:.2f}%；"
+            f"推荐接口平均响应时间由{recommendation_summary['min_avg']:.2f} ms上升至{recommendation_summary['max_avg']:.2f} ms，"
+            f"95%响应时间由{recommendation_summary['min_p95']:.2f} ms上升至{recommendation_summary['max_p95']:.2f} ms，"
+            f"错误率最高为{recommendation_summary['max_error_rate'] * 100:.2f}%。"
+            "上述结果说明商品查询接口与推荐接口在当前测试规模下均能够稳定返回结果，且随着并发增加，推荐接口的耗时增长相对更明显。"
+        ),
         size=10,
         before=12,
         after=6,
     )
 
+    order_paragraph = (
+        "订单提交接口在本轮测试中表现稳定。"
+        f"在并发用户数分别为10、30和50的条件下，其平均响应时间介于{order_summary['min_avg']:.2f} ms至{order_summary['max_avg']:.2f} ms之间，"
+        f"95%响应时间介于{order_summary['min_p95']:.2f} ms至{order_summary['max_p95']:.2f} ms之间，"
+        f"错误率最高为{order_summary['max_error_rate'] * 100:.2f}%。"
+        "说明在优化订单号生成策略后，订单写入链路已能够较好支撑当前中低并发场景下的提交请求。"
+    )
+    if order_summary["max_error_rate"] > 0:
+        order_paragraph = (
+            "订单提交接口在本轮测试中整体可用，但仍存在少量失败请求。"
+            f"其平均响应时间介于{order_summary['min_avg']:.2f} ms至{order_summary['max_avg']:.2f} ms之间，"
+            f"95%响应时间介于{order_summary['min_p95']:.2f} ms至{order_summary['max_p95']:.2f} ms之间，"
+            f"错误率最高为{order_summary['max_error_rate'] * 100:.2f}%。"
+            "相比优化前由订单号重复引发的大规模失败，当前结果表明订单唯一性问题已经得到明显改善，但后续仍可继续从数据库写入效率和事务链路稳定性方面进一步优化。"
+        )
+
     add_text_paragraph(
         doc,
-        "订单提交接口在三档并发测试中均出现较高错误率。结合后端日志分析可知，主要原因并非数据库无法写入，而是当前订单号生成策略采用“秒级时间戳 + 用户ID”方式，在高并发条件下容易产生重复订单号，进而触发主键冲突，导致订单提交失败。因此，该测试结果反映出系统在事务写入链路上仍存在并发唯一性不足的问题。后续可通过引入毫秒级时间戳、雪花算法或UUID等方式优化订单号生成策略，从而提升高并发场景下的订单提交成功率。",
+        order_paragraph,
         size=10,
         before=0,
         after=0,

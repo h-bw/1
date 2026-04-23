@@ -1,11 +1,10 @@
 package com.huacai.snack.service.impl;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import com.huacai.snack.domain.vo.OrderStatusBarVO;
 import com.huacai.system.general.utils.DateUtils;
+import com.huacai.system.general.utils.uuid.IdUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -72,18 +71,15 @@ public class OrderServiceImpl implements IOrderService {
         order.setCreateTime(DateUtils.getNowDate());
         Long userId = getUserId();
         order.setUserId(userId);
-
-        //获取当前日期时间
-        LocalDateTime now = LocalDateTime.now();
-        //定义格式器
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        //格式化为字符串
-        String formatDateTime = now.format(formatter);
-        order.setOrderId("OR" + formatDateTime + userId);
+        order.setOrderId(generateOrderId(userId));
 
         int rows = orderMapper.insertOrder(order);
         insertOrderProducts(order);
         return rows;
+    }
+
+    private String generateOrderId(Long userId) {
+        return "OR" + System.currentTimeMillis() + userId + IdUtils.fastSimpleUUID().substring(0, 8);
     }
 
     /**
