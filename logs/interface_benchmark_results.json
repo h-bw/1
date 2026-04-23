@@ -1,0 +1,116 @@
+{
+  "商品查询接口": [
+    {
+      "concurrency": 10,
+      "requests": 100,
+      "avg_ms": 25.29,
+      "p95_ms": 34.59,
+      "error_rate": 0.0,
+      "throughput_rps": 356.66,
+      "errors": 0,
+      "error_samples": []
+    },
+    {
+      "concurrency": 30,
+      "requests": 300,
+      "avg_ms": 45.33,
+      "p95_ms": 65.38,
+      "error_rate": 0.0,
+      "throughput_rps": 541.06,
+      "errors": 0,
+      "error_samples": []
+    },
+    {
+      "concurrency": 50,
+      "requests": 500,
+      "avg_ms": 67.64,
+      "p95_ms": 110.43,
+      "error_rate": 0.0,
+      "throughput_rps": 531.31,
+      "errors": 0,
+      "error_samples": []
+    }
+  ],
+  "订单提交接口": [
+    {
+      "concurrency": 10,
+      "requests": 100,
+      "avg_ms": 37.54,
+      "p95_ms": 180.22,
+      "error_rate": 0.99,
+      "throughput_rps": 2.5,
+      "errors": 99,
+      "error_samples": [
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'"
+      ]
+    },
+    {
+      "concurrency": 30,
+      "requests": 300,
+      "avg_ms": 50.37,
+      "p95_ms": 71.88,
+      "error_rate": 0.9967,
+      "throughput_rps": 1.6,
+      "errors": 299,
+      "error_samples": [
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142847104' for key 'order.PRIMARY'"
+      ]
+    },
+    {
+      "concurrency": 50,
+      "requests": 500,
+      "avg_ms": 76.17,
+      "p95_ms": 119.44,
+      "error_rate": 0.998,
+      "throughput_rps": 0.96,
+      "errors": 499,
+      "error_samples": [
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'",
+        "\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'\r\n### The error may exist in file [D:\\DevelopSoft\\lingshi\\huacai-snack-web\\huacai-springboot3\\target\\classes\\mapper\\snack\\OrderMapper.xml]\r\n### The error may involve com.huacai.snack.mapper.OrderMapper.insertOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into `order`          ( order_id,             name,             phone,             address,             total_amount,             product_count,             status,                          user_id,             create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,             ?,                          ?,             ? )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'\n; Duplicate entry 'OR20260423142848104' for key 'order.PRIMARY'"
+      ]
+    }
+  ],
+  "推荐接口": [
+    {
+      "concurrency": 10,
+      "requests": 100,
+      "avg_ms": 68.06,
+      "p95_ms": 84.83,
+      "error_rate": 0.0,
+      "throughput_rps": 138.94,
+      "errors": 0,
+      "error_samples": []
+    },
+    {
+      "concurrency": 30,
+      "requests": 300,
+      "avg_ms": 157.5,
+      "p95_ms": 187.19,
+      "error_rate": 0.0,
+      "throughput_rps": 184.02,
+      "errors": 0,
+      "error_samples": []
+    },
+    {
+      "concurrency": 50,
+      "requests": 500,
+      "avg_ms": 245.74,
+      "p95_ms": 326.68,
+      "error_rate": 0.0,
+      "throughput_rps": 196.36,
+      "errors": 0,
+      "error_samples": []
+    }
+  ]
+}
