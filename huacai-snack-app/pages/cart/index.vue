@@ -216,6 +216,7 @@ const checkOut = () => {
     //构建订单项数据
     const orderItems = selectedItems.map(item => ({
         cartId: item.cartId,
+        productId: item.productId,
         name: item.name,
         price: item.price,
         quantity: item.quantity,

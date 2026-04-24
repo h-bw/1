@@ -25,6 +25,10 @@ public class OrderProducts extends BaseEntity
     @Excel(name = "订单号")
     private String orderId;
 
+    /** 商品编号 */
+    @Excel(name = "商品编号")
+    private String productId;
+
     /** 图片 */
     @Excel(name = "图片")
     private String image;
