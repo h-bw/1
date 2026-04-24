@@ -291,6 +291,7 @@ const settlement = () => {
         remark: orderRemark.value,
         orderProductsList: orderItems.value.map(item => ({
             cartId: item.cartId,
+            productId: item.productId,
             name: item.name,
             price: item.price,
             quantity: item.quantity,

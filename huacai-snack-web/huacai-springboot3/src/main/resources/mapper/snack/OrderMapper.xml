@@ -25,6 +25,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="OrderProducts" id="OrderProductsResult">
         <result property="opId"    column="op_id"    />
         <result property="orderId"    column="order_id"    />
+        <result property="productId"    column="product_id"    />
         <result property="image"    column="image"    />
         <result property="name"    column="name"    />
         <result property="price"    column="price"    />
@@ -57,7 +58,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectOrderProductsList" resultMap="OrderProductsResult">
-        select op_id, order_id, image, name, price, quantity
+        select op_id, order_id, product_id, image, name, price, quantity
         from order_products
         where order_id = #{order_id}
     </select>
@@ -136,9 +137,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <insert id="batchOrderProducts">
-        insert into order_products( op_id, order_id, image, name, price, quantity) values
+        insert into order_products( op_id, order_id, product_id, image, name, price, quantity) values
         <foreach item="item" index="index" collection="list" separator=",">
-            ( #{item.opId}, #{item.orderId}, #{item.image}, #{item.name}, #{item.price}, #{item.quantity})
+            ( #{item.opId}, #{item.orderId}, #{item.productId}, #{item.image}, #{item.name}, #{item.price}, #{item.quantity})
         </foreach>
     </insert>
 </mapper>
